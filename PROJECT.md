@@ -2,9 +2,27 @@
 
 ## Finalité et priorité V1
 
-SHADE est une application métier V1 destinée aux professionnelles de l'esthétique. La priorité est la gestion des documents et des consentements associés aux prestations.
+SHADE est une application métier destinée aux professionnelles de l'esthétique. La V1 prioritaire couvre :
+
+- les consentements ;
+- le stock de produits et de lots ;
+- la traçabilité cliente ↔ séance/prestation ↔ produits/lots ;
+- le socle minimal cliente → prestation → séance.
 
 Les prestations, leurs variantes et leurs workflows doivent être configurables. Le fonctionnement d'un métier ou d'une spécialité ne doit jamais être codé en dur.
+
+## V1 bis
+
+Le scan code-barres depuis mobile ou tablette accélérera la saisie des produits et lots. Cette fonction est classée en V1 bis et ne doit pas bloquer la sortie de la V1. Elle sera développée immédiatement après validation du noyau stock/lot.
+
+## Périmètre reporté après V1/V1 bis
+
+- Photos avant/après.
+- Fonctions visuelles et retouche.
+- Agenda avancé / Planity.
+- Clôture de journée.
+- Imports complexes.
+- IA / Studio.
 
 ## Stack et hébergement cibles
 

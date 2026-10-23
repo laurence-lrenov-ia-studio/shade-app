@@ -2,7 +2,13 @@
 
 ## Statut et périmètre
 
-Ce document formalise l'architecture cible de la V1, sans initialiser de projet technique. SHADE est une application métier pour professionnelles de l'esthétique, avec priorité aux documents et consentements. Le cadrage produit est défini dans [PROJECT.md](../PROJECT.md).
+Ce document formalise l'architecture cible de la V1, sans initialiser de projet technique. SHADE est une application métier pour professionnelles de l'esthétique. Le cadrage produit est défini dans [PROJECT.md](../PROJECT.md).
+
+La V1 prioritaire couvre les consentements, le stock de produits et de lots, la traçabilité cliente ↔ séance/prestation ↔ produits/lots et le socle minimal cliente → prestation → séance.
+
+Le scan code-barres depuis mobile ou tablette, destiné à accélérer la saisie des produits et lots, est classé en V1 bis. Il ne doit pas bloquer la sortie de la V1 et sera développé immédiatement après validation du noyau stock/lot.
+
+Les photos avant/après, les fonctions visuelles et la retouche, l'agenda avancé / Planity, la clôture de journée, les imports complexes et l'IA / Studio sont reportés après V1/V1 bis. Les règles d'architecture, de sécurité et de conservation décrites ci-dessous restent applicables, y compris aux fonctions reportées.
 
 ## Frontières techniques
 

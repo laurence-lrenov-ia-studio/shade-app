@@ -2,6 +2,10 @@
 
 Socle React + TypeScript + Vite. Aucun module métier ni raccordement backend.
 
+Le [spike PDF serveur du Lot 0B](docs/SPIKE_PDF_LOT_0B.md) est isolé dans
+`spikes/server-pdf/`, sans dépendance du frontend. Son rapport contient la
+comparaison des hébergements, les commandes, les résultats et les limites.
+
 ## Exécution
 
 Node.js 22.12 minimum (Node 24 LTS recommandé), npm et accès au registre npm.

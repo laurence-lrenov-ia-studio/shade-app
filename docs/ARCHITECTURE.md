@@ -113,3 +113,30 @@ Les performances et limites réelles de la plateforme Supabase hébergée devron
 Les mesures ponctuelles du spike local ne constituent aucune garantie de
 performance en production. Cette décision ne valide pas un endpoint métier
 ni le moteur documentaire métier, qui restent à concevoir dans des lots dédiés.
+
+## Lot 0C — Décisions OTP et email — 23 octobre 2026
+
+L'OTP destiné à la future signature renforcée SHADE est géré côté serveur et
+reste distinct de Supabase Auth. Le mécanisme OTP est isolé derrière un service
+dédié ; l'envoi email est isolé derrière un adaptateur fournisseur interchangeable.
+Les secrets restent exclusivement côté serveur. Le code OTP ne doit pas être
+conservé en clair dans la persistance ou les journaux SHADE.
+
+La V1 devra prévoir une expiration, une limite de tentatives et un usage unique.
+La persistance de production devra permettre des opérations atomiques et
+fonctionner avec plusieurs workers, notamment pour le décompte des tentatives
+et la consommation unique du code. Les événements nécessaires au dossier de
+preuve devront être journalisés durablement.
+
+Mailpit est uniquement l'outil local de capture des emails de développement ;
+il ne constitue pas le fournisseur email de production. Sa conservation
+temporaire du contenu des emails relève exclusivement de l'environnement local
+de test et ne définit aucune propriété du futur système de production.
+Le fournisseur email réel reste à choisir ultérieurement et devra pouvoir être
+remplacé sans modifier la logique OTP.
+
+Ces décisions reposent sur le [spike du Lot 0C](SPIKE_OTP_EMAIL_LOT_0C.md).
+Elles ne figent ni le stockage ni la gestion des clés du prototype, et ne
+constituent pas une validation de la persistance ou de la journalisation de
+production. Aucun consentement, signature métier ou parcours cliente n'est
+implémenté par cette décision ; les invariants existants restent applicables.

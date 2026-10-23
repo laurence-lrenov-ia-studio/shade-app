@@ -70,3 +70,24 @@ Toute évolution de schéma Supabase doit passer par une migration versionnée d
 Une modification effectuée uniquement dans le dashboard ou par SQL ponctuel ne constitue pas une évolution livrable. Chaque lot de schéma doit permettre de reproduire le changement, vérifier les droits et l'isolation, et prévoir une stratégie de retour ou de correction qui préserve les données et versions conservées.
 
 Le développement procède par petits lots testables et réversibles. Le code, les migrations et la documentation évoluent ensemble ; aucune stack ni aucun service n'est initialisé dans ce lot documentaire.
+
+## Lot 0 technique — 23 octobre 2026
+
+La nouvelle demande autorise le socle frontend après le lot documentaire décrit
+ci-dessus, dont les principes restent applicables. React, TypeScript et Vite sont
+initialisés sans module métier. `src/app/` porte uniquement la page de contrôle et
+le démarrage ; aucune couche métier ou d'accès aux données n'est encore créée.
+
+Le SDK client Supabase est installé mais non instancié : aucun projet réel, schéma,
+authentification, migration ou stockage n'est configuré. `.env.example` liste
+uniquement l'URL et la clé publique publiable attendues pour un raccordement futur.
+
+La PWA comprend un manifeste, deux icônes PNG et un service worker de production
+sans interception réseau, précache ni cache dynamique. Aucun fonctionnement hors
+ligne ni stockage local de données n'est fourni. Les futurs échanges sensibles
+devront aussi exclure la conservation par le cache HTTP via les en-têtes adaptés.
+L'installation nécessite un navigateur compatible et HTTPS ou localhost.
+
+Le build est prévu pour la racine du domaine Hostinger ; aucun déploiement n'est
+effectué dans ce lot. Les instructions de contrôle et de retour arrière figurent
+dans `README.md`.

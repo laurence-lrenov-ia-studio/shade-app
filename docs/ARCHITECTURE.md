@@ -91,3 +91,25 @@ L'installation nécessite un navigateur compatible et HTTPS ou localhost.
 Le build est prévu pour la racine du domaine Hostinger ; aucun déploiement n'est
 effectué dans ce lot. Les instructions de contrôle et de retour arrière figurent
 dans `README.md`.
+
+## Lot 0B — Décision PDF serveur V1 — 23 octobre 2026
+
+Pour la V1, les PDF simples générés à partir de données structurées seront
+produits côté serveur via une Supabase Edge Function. Le renderer validé utilise
+`pdf-lib`. Cette décision repose sur le spike réussi dans le runtime Edge local,
+dont les résultats sont conservés dans [le rapport du Lot 0B](SPIKE_PDF_LOT_0B.md).
+
+Le frontend ne dépend pas du moteur de génération : le rendu reste isolé côté
+serveur et peut être remplacé sans modifier les composants de l'interface.
+Le calcul SHA-256 du PDF final est réalisable côté serveur et doit porter sur
+les octets effectivement conservés, après toute transformation.
+
+Un service serveur côté Hostinger reste une solution de repli si de futurs
+besoins PDF dépassent les limites du runtime Edge. Ce repli ne modifie pas les
+invariants d'autorisation, d'isolation et de conservation déjà définis.
+
+Les performances et limites réelles de la plateforme Supabase hébergée devront
+être vérifiées avant mise en production sur des documents représentatifs.
+Les mesures ponctuelles du spike local ne constituent aucune garantie de
+performance en production. Cette décision ne valide pas un endpoint métier
+ni le moteur documentaire métier, qui restent à concevoir dans des lots dédiés.

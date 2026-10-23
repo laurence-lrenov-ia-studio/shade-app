@@ -250,3 +250,154 @@ précédent ont été préservés. Aucun secret réel, projet distant, déploiem
 table ou migration métier, donnée réelle, authentification métier, Storage réel,
 consentement, signature, OTP, email ou fonctionnalité métier utilisé ou ajouté.
 Aucun commit ni push.
+
+## Reprise — validation Edge locale réussie, 23 octobre 2026
+
+Cette section actualise le blocage précédent sans supprimer son historique.
+Les cinq documents de cadrage demandés ont été relus avant modification.
+Le dépôt était propre au début de la reprise. L'objectif de ce lot est uniquement
+la validation du runtime, pas un endpoint de production.
+
+### Environnement et méthode réellement utilisés
+
+- Docker Desktop 4.96.3 ; client et moteur Docker 29.9.2, contexte desktop-linux.
+  `docker version` fonctionne hors bac à sable (accès au pipe refusé à l'intérieur).
+- CLI Supabase 2.122.0 installée comme dépendance de développement épinglée dans
+  `spikes/server-pdf/` seulement ; aucun changement du paquet frontend.
+- Supabase Edge Runtime 1.77.8, annoncé compatible Deno 2.1.4 par les logs.
+- Initialisation locale officielle via la CLI, dans `spikes/server-pdf/supabase/`.
+  Aucun login, lien ou projet distant. Le `project_id` est un nom de conteneurs
+  locaux, pas une référence de projet Supabase hébergé.
+
+La tentative `functions serve` seule a répondu `ServeLocalDbNotRunningError`.
+La CLI demande donc un démarrage local préalable. Configuration réduite : Auth,
+Storage, Realtime, Studio, SMTP, analytics, seeds et migrations désactivés.
+Le démarrage avec exclusions explicites a réellement lancé quatre conteneurs :
+Postgres 17.11.0.006, Kong 2.8.1, PostgREST 16.5 et Edge Runtime 1.77.8.
+PostgREST a été démarré malgré son exclusion demandée par cette version de CLI.
+Aucune stack métier, Auth, Storage ou messagerie n'a été utilisée.
+
+Les téléchargements npm et images officielles utilisent Internet pour l'outillage.
+Cela n'est pas une connexion à un projet Supabase distant : le test HTTP est fixé
+à `http://127.0.0.1:54321/functions/v1/pdf-spike`. Le code de la fonction n'effectue
+aucun appel réseau applicatif, ne lit aucun secret et n'importe aucun SDK Supabase.
+
+### Code et adaptations
+
+- Le corps de `render.mjs` est déplacé sans changement dans
+  `supabase/functions/_shared/render.mjs`. L'ancien chemin réexporte la même
+  fonction : une seule implémentation reste partagée par Node et Edge.
+- `supabase/functions/deno.json` associe l'import `pdf-lib` à
+  `npm:pdf-lib@1.17.1`. Aucun remplacement de bibliothèque, navigateur embarqué,
+  adaptation de logique PDF ou dépendance native nécessaire.
+- `supabase/functions/pdf-spike/index.ts` sert la fonction technique : POST JSON,
+  données limitées aux deux fixtures fictives A/B, réponse PDF `no-store`,
+  empreinte serveur Web Crypto SHA-256 dans `X-PDF-SHA256`, durée du renderer
+  dans `Server-Timing`. JSON invalide ou fixture non autorisée : 400 ; GET : 405.
+  L'absence de vérification JWT est limitée à ce spike local sans donnée réelle.
+- `edge-test.mjs` teste les deux fixtures par HTTP, vérifie PDF/une page,
+  empreinte recalculée, en-têtes, trois entrées invalides et méthode refusée.
+  Les PDF et métriques sont écrits par le client de test dans `output/`, ignoré.
+  Le serveur Edge ne fait aucune écriture de fichier, base ou Storage.
+- `supabase/config.toml` et `.gitignore` isolent la configuration et les fichiers
+  techniques temporaires. Aucun secret réel ou fichier `.env` créé.
+- `package.json` et son lockfile ajoutent seulement la CLI locale et ses
+  dépendances de développement ; pdf-lib reste en 1.17.1.
+
+**Compatibilité réelle : pdf-lib fonctionne dans Supabase Edge Runtime local,
+sans adaptation de son code de rendu.** Seuls l'emplacement partagé, la résolution
+npm dans Deno et l'adaptateur HTTP sont spécifiques à l'environnement.
+
+### Commandes de reprise et de reproduction
+
+Depuis la racine, Docker démarré. Les commandes CLI ci-dessous ont été précédées
+de la lecture de `--help`, `init --help`, `start --help`, `functions serve --help`
+et `stop --help`. Elles utilisent uniquement le binaire installé dans le spike.
+
+```powershell
+docker version
+npm view supabase version
+npm install --prefix spikes/server-pdf --save-dev --save-exact supabase@2.122.0
+spikes/server-pdf/node_modules/.bin/supabase --version
+spikes/server-pdf/node_modules/.bin/supabase init --workdir spikes/server-pdf --yes
+# Après création de la fonction et réduction de config.toml :
+spikes/server-pdf/node_modules/.bin/supabase start --workdir spikes/server-pdf --exclude gotrue,realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,logflare,vector,supavisor
+spikes/server-pdf/node_modules/.bin/supabase functions serve pdf-spike --workdir spikes/server-pdf --no-verify-jwt
+# Dans un autre terminal :
+node spikes/server-pdf/edge-test.mjs
+npm test --prefix spikes/server-pdf
+npm run build
+npm run lint
+docker ps --filter name=shade-pdf-spike --format "{{.Names}} {{.Image}}"
+docker exec supabase_db_shade-pdf-spike psql -U postgres -d postgres -Atc "SELECT count(*) FROM pg_tables WHERE schemaname = 'public';"
+docker logs --tail 25 supabase_edge_runtime_shade-pdf-spike
+spikes/server-pdf/node_modules/.bin/supabase stop --workdir spikes/server-pdf --project-id shade-pdf-spike
+git diff --check
+```
+
+Sur un clone, `npm ci --prefix spikes/server-pdf` restaure aussi la CLI ; son
+installation nécessite ses scripts d'installation, contrairement au seul renderer
+PDF du premier spike. Ne pas relancer `init` sur la configuration déjà présente.
+Les accès Docker, téléchargements et HTTP loopback ont été exécutés hors bac à
+sable après autorisation. Aucune installation système supplémentaire effectuée.
+
+### Résultats constatés
+
+| Contrôle | Résultat |
+| --- | --- |
+| Démarrage local | Réussi ; logs de service de `pdf-spike` dans Edge Runtime |
+| HTTP POST A/B | 200, application/pdf, no-store |
+| PDF | 1 page, 1 033 octets par fixture, structure relue avec pdf-lib |
+| Texte/date/identifiant | Confirmés pour A et B par lecture indépendante pypdf |
+| SHA-256 serveur | Identique au recalcul Node et au recalcul indépendant Python |
+| Entrées `{}`, `null`, JSON tronqué | 400 avec erreur JSON technique |
+| Méthode GET | 405 |
+| Base/Storage | Aucune écriture applicative ; zéro table dans public ; aucun conteneur Storage |
+| Tests Node existants | 2 réussis, 0 échec après déplacement du renderer |
+| Build frontend | Réussi, bundle frontend inchangé |
+| Lint | Réussi après déclaration des globals du test Edge |
+
+Les deux PDF ont été lus avec pypdf, leur date et leurs identifiants vérifiés et
+leurs empreintes recalculées via hashlib. Le PDF A a aussi été rendu avec Poppler
+et inspecté : quatre lignes lisibles, sans troncature ni chevauchement. Les mêmes
+avertissements de polices de remplacement Poppler que lors du spike Node restent
+sans défaut visible. Ces outils ne sont pas des dépendances du projet.
+
+| Mesure ponctuelle | Fixture A (premier appel) | Fixture B (appel suivant) |
+| --- | --- | --- |
+| Renderer côté Edge, performance.now | 15,587 ms | 2,630 ms |
+| Test client jusqu'à lecture et vérifications | 979,972 ms | 11,256 ms |
+
+Ces durées sont des mesures murales ponctuelles, pas des mesures CPU ni un test
+de charge. Le premier appel inclut l'initialisation et la résolution des modules.
+La durée serveur exclut le hash et la réponse HTTP. Aucun problème évident de
+compatibilité ou épuisement de ressources observé sur ces deux petits fichiers.
+
+La CLI initialise ses schémas techniques locaux et rôles dans Postgres au
+démarrage : il serait incorrect de présenter ce démarrage comme une absence
+absolue d'écritures système. Il n'y a aucune table/migration métier, ni aucune
+écriture de données par le renderer ou la fonction. Les services du spike ont
+été arrêtés après vérification, sans suppression de volumes techniques.
+
+### Recommandation après validation
+
+**Retenir Supabase Edge Function pour la V1 de PDF simples à données structurées.**
+La portabilité du renderer et le hash serveur sont maintenant validés dans le
+runtime local officiel ; maintenir un service Hostinger supplémentaire n'est pas
+justifié pour ce périmètre. La décision n'est pas encore inscrite dans
+docs/ARCHITECTURE.md, conformément à la demande.
+
+Restent à tester dans des lots ultérieurs : documents représentatifs, budgets CPU
+et mémoire de la plateforme hébergée, mise en page avancée, droits multi-tenant,
+finalisation et conservation immuable. Ce spike ne valide ni la production ni
+la sécurité d'un endpoint métier. La fonction volontairement sans authentification
+ne doit pas être déployée telle quelle.
+
+Réversibilité : arrêter seulement le projet local `shade-pdf-spike`, retirer les
+fichiers Edge et la dépendance CLI, puis replacer le renderer à son ancien chemin.
+Aucune donnée métier ou interface ne dépend de ce lot.
+
+Aucun projet/infrastructure Supabase distant, lien, déploiement, secret réel,
+table/migration métier, donnée réelle, Storage réel, authentification métier,
+OTP, email, consentement, signature ou fonctionnalité métier utilisé ou ajouté.
+Frontend, design et architecture inchangés. Aucun commit ni push.

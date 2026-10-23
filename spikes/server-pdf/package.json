@@ -1,1 +1,1 @@
-{"name":"shade-server-pdf-spike","private":true,"type":"module","scripts":{"test":"node --test test.mjs"},"dependencies":{"pdf-lib":"1.17.1"}}
+{"name":"shade-server-pdf-spike","private":true,"type":"module","scripts":{"test":"node --test test.mjs"},"dependencies":{"pdf-lib":"1.17.1"},"devDependencies":{"supabase":"2.122.0"}}
